@@ -1,0 +1,27 @@
+name: recall-memory-hermes
+version: 0.1.0
+description: "Hermes Agent memory provider for recall-memory (SAG-based retrieval)"
+author: Jun
+license: Apache-2.0
+
+memory:
+  provider: recall
+  entry_point: recall_memory_hermes:create_provider
+
+config:
+  db_path:
+    type: string
+    default: ""
+    description: "Path to recall DB (auto-detect if empty)"
+  embed_url:
+    type: string
+    default: "http://127.0.0.1:1234"
+    description: "LM Studio embedding endpoint"
+  fallback_honcho:
+    type: bool
+    default: true
+    description: "Fallback to Honcho if recall returns <3 results"
+  fallback_honcho_url:
+    type: string
+    default: "http://localhost:8082"
+    description: "Honcho API base URL"
