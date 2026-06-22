@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "recall-memory-hermes"
+version = "0.1.0"
+description = "Hermes Agent memory provider plugin for recall-memory (SAG-based retrieval)"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.10"
+dependencies = [
+    "recall-memory>=0.1.0",
+    "httpx>=0.27.0",
+]
+
+[project.urls]
+homepage = "https://github.com/Jnocode/recall-memory-hermes"
+repository = "https://github.com/Jnocode/recall-memory-hermes"
+
+[tool.setuptools.packages.find]
+where = ["src"]
