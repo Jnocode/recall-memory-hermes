@@ -19,7 +19,7 @@ config:
     description: "LM Studio embedding endpoint"
   fallback_honcho:
     type: bool
-    default: true
+    default: false
     description: "Fallback to Honcho if recall returns <3 results"
   fallback_honcho_url:
     type: string

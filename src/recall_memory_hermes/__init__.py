@@ -24,7 +24,7 @@ class RecallMemoryProvider:
         self.config = config or {}
         self.db_path = self.config.get("db_path", RECALL_DB_PATH)
         self.embed_url = self.config.get("embed_url", "http://127.0.0.1:1234")
-        self.fallback_honcho = self.config.get("fallback_honcho", True)
+        self.fallback_honcho = self.config.get("fallback_honcho", False)
         self.fallback_honcho_url = self.config.get(
             "fallback_honcho_url", "http://localhost:8082"
         )
