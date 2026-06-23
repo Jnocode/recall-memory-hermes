@@ -1,24 +1,29 @@
 """recall-memory-hermes: Hermes Agent memory provider plugin.
 
-Session-aware, peer-contextual, tag-filtered retrieval backed by
-recall-memory (SAG-based, sqlite-vec + FTS5 + keyword SQL JOIN).
-Optional Honcho fallback during bridge period.
-
-Usage:
-    hermes memory setup  # select 'recall' as provider
+Hermes MemoryProvider ABC implementation backed by recall-memory
+(SAG-based, sqlite-vec + FTS5 + keyword SQL JOIN, 3-path RRF).
+Session-aware, peer-contextual, tag-filtered retrieval.
+Optional Honcho fallback (OFF by default).
 """
 
 import os
 import logging
-from typing import Optional
+from typing import Any, Dict, List, Optional
+from datetime import datetime, timezone
+
+from agent.memory_provider import MemoryProvider
 
 logger = logging.getLogger(__name__)
 
 RECALL_DB_PATH = "D:/Workspace/03_Dev_Projects/recall/recall_p0.db"
 
 
-class RecallMemoryProvider:
+class RecallMemoryProvider(MemoryProvider):
     """Hermes memory provider backed by recall-memory (SAG-based)."""
+
+    @property
+    def name(self) -> str:
+        return "recall"
 
     def __init__(self, config: Optional[dict] = None):
         self.config = config or {}
@@ -29,140 +34,165 @@ class RecallMemoryProvider:
             "fallback_honcho_url", "http://localhost:8082"
         )
         self._store = None
-        self._initialized = False
+        self._memory_count = 0
 
-    # ─── Lifecycle ──────────────────────────────────────────────────────────
+    # ─── ABC Required: Core lifecycle ───────────────────────────────────────
+
+    def is_available(self) -> bool:
+        """Check if recall DB exists and recall-memory is installed."""
+        if not os.path.exists(self.db_path):
+            return False
+        try:
+            import recall  # noqa
+            return True
+        except ImportError:
+            return False
 
     def initialize(self):
-        if self._initialized:
+        """Connect to recall DB, warm up."""
+        if self._store is not None:
             return
-        try:
-            from recall.store import SQLiteStore
-            self._store = SQLiteStore(self.db_path)
-            count = self._store.count()
-            logger.info(f"✅ recall: {self.db_path} ({count} memories)")
-        except ImportError as e:
-            logger.error(f"❌ recall-memory not installed: {e}")
-            raise
-        self._initialized = True
+        from recall.store import SQLiteStore
+        self._store = SQLiteStore(self.db_path)
+        self._memory_count = self._store.count()
+        logger.info(f"✅ recall initialized: {self.db_path} ({self._memory_count} memories)")
 
-    # ─── Core API ───────────────────────────────────────────────────────────
+    def shutdown(self):
+        """Clean shutdown."""
+        self._store = None
+        logger.info("recall provider shut down")
 
-    def search(
-        self,
-        query: str,
-        k: int = 5,
-        session_id: Optional[str] = None,
-        peer: Optional[str] = None,
-        tag: Optional[str] = None,
-    ) -> list[dict]:
-        if not self._initialized:
-            self.initialize()
-        results = self._recall_search(query, k, session_id=session_id, tag=tag)
-        if peer and results:
-            self._apply_peer_boost(results, peer)
-        if self.fallback_honcho and len(results) < min(3, k):
-            honcho_results = self._honcho_search(query, k - len(results))
-            results.extend(honcho_results)
-        return results[:k]
+    # ─── ABC Required: System prompt ────────────────────────────────────────
 
-    def store(
-        self,
-        content: str,
-        metadata: Optional[dict] = None,
-    ) -> str:
-        if not self._initialized:
-            self.initialize()
-        from recall.store import Memory
-        from datetime import datetime, timezone
-        meta = metadata or {}
-        mem = Memory(
-            content=content,
-            session_id=meta.get("session_id", ""),
-            tag=meta.get("tag", "episodic"),
-            timestamp=datetime.now(timezone.utc),
+    def system_prompt_block(self) -> str:
+        """Static block for system prompt describing recall capabilities."""
+        if not self._store:
+            return ""
+        return (
+            f"You have access to recall-memory: a persistent SAG-based memory store "
+            f"with {self._memory_count} memories. "
+            f"Use `memory recall <query>` to search across sessions."
         )
-        mem_id = self._store.add(mem)
-        logger.info(f"✅ stored: {mem_id}")
-        return mem_id
 
-    def stats(self) -> dict:
-        if not self._initialized:
+    # ─── ABC Required: Prefetch / Sync ──────────────────────────────────────
+
+    def prefetch(self, query: str, session_id: str = "") -> str:
+        """Called before each turn. Search recall for relevant memories."""
+        if not self._store:
             self.initialize()
-        return {
-            "memories": self._store.count(),
-            "keywords": self._count_keywords(),
-        }
-
-    def get_by_session(self, session_id: str) -> list[dict]:
-        if not self._initialized:
-            self.initialize()
-        memories = self._store.get_by_session(session_id)
-        return [
-            {"id": m.id, "content": m.content, "score": 1.0, "source": "recall",
-             "session_id": m.session_id, "tag": m.tag}
-            for m in memories
-        ]
-
-    def delete(self, memory_id: str) -> bool:
-        if not self._initialized:
-            self.initialize()
-        return self._store.delete(memory_id)
-
-    # ─── Internal ───────────────────────────────────────────────────────────
-
-    def _recall_search(self, query: str, k: int, session_id=None, tag=None) -> list[dict]:
+        if not query or not query.strip():
+            return ""
         try:
             from recall.retrieve import retrieve_relevant
-            memories = retrieve_relevant(query, self._store, k=k * 2, tag_filter=tag)
-            results = [
-                {"id": m.id, "content": m.content, "score": 1.0, "source": "recall",
-                 "session_id": m.session_id, "tag": m.tag}
-                for m in memories
-            ]
-            if session_id and results:
-                scoped = [r for r in results if r["session_id"] == session_id]
-                if scoped:
-                    return scoped[:k]
-            return results[:k]
+            memories = retrieve_relevant(query, self._store, k=5)
+            if not memories:
+                return ""
+            lines = [f"🔍 找到相關記憶："]
+            for m in memories[:5]:
+                tag = f"[{m.tag}]" if m.tag else ""
+                lines.append(f"  {tag} {m.content[:120]}")
+            return "\n".join(lines)
         except Exception as e:
-            logger.warning(f"recall search failed: {e}")
-            return []
+            logger.debug(f"prefetch failed: {e}")
+            return ""
 
-    def _apply_peer_boost(self, results: list[dict], peer: str):
-        for r in results:
-            if peer == "user" and not r.get("session_id"):
-                r["score"] = r.get("score", 1.0) * 1.2
-            elif peer == "agent" and r.get("session_id", "").startswith("agent_"):
-                r["score"] = r.get("score", 1.0) * 1.2
-
-    def _honcho_search(self, query: str, k: int) -> list[dict]:
+    def sync_turn(
+        self,
+        user_content: str,
+        assistant_content: str,
+        session_id: str = "",
+        messages: Optional[List[Dict[str, Any]]] = None,
+    ) -> None:
+        """Called after each turn. Store the turn in recall."""
+        if not self._store:
+            self.initialize()
+        if not user_content or not user_content.strip():
+            return
+        from recall.store import Memory
+        mem = Memory(
+            content=user_content[:500],
+            session_id=session_id,
+            tag="episodic",
+            timestamp=datetime.now(timezone.utc),
+        )
         try:
-            import httpx
-            r = httpx.get(
-                f"{self.fallback_honcho_url}/v3/workspaces/hermes-agent/search",
-                params={"q": query, "limit": k}, timeout=5.0,
-            )
-            if r.status_code != 200:
-                return []
-            data = r.json()
-            hits = data.get("results", data.get("hits", []))
-            return [{"id": h.get("id", ""), "content": h.get("content", ""),
-                     "score": 0.5, "source": "honcho", "session_id": "", "tag": ""}
-                    for h in hits[:k]]
+            self._store.add(mem)
         except Exception as e:
-            logger.warning(f"honcho fallback failed: {e}")
-            return []
+            logger.debug(f"sync_turn store failed: {e}")
 
-    def _count_keywords(self) -> int:
-        import sqlite3
+    # ─── ABC Required: Tools ───────────────────────────────────────────────
+
+    def get_tool_schemas(self) -> List[Dict[str, Any]]:
+        """Expose memory recall/write tools to the model."""
+        return [
+            {
+                "name": "memory_recall",
+                "description": "Search persistent memory across sessions. Returns relevant memories for context.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Search query to find relevant memories",
+                        },
+                        "k": {
+                            "type": "integer",
+                            "description": "Number of results to return",
+                            "default": 5,
+                        },
+                    },
+                    "required": ["query"],
+                },
+            },
+        ]
+
+    def handle_tool_call(self, tool_name: str, args: dict) -> str:
+        """Dispatch tool calls to the appropriate method."""
+        if tool_name == "memory_recall":
+            return self._handle_recall_tool(args)
+        return f"Unknown tool: {tool_name}"
+
+    def _handle_recall_tool(self, args: dict) -> str:
+        """Handle memory_recall tool call."""
+        query = args.get("query", "")
+        k = args.get("k", 5)
+        if not self._store:
+            self.initialize()
         try:
-            conn = sqlite3.connect(self.db_path)
-            row = conn.execute("SELECT COUNT(*) FROM keywords").fetchone()
-            conn.close()
-            return row[0] if row else 0
-        except Exception:
-            return 0
+            from recall.retrieve import retrieve_relevant
+            memories = retrieve_relevant(query, self._store, k=k)
+            if not memories:
+                return "未找到相關記憶。"
+            lines = [f"找到 {len(memories)} 條相關記憶："]
+            for m in memories[:k]:
+                lines.append(f"- {m.content[:200]}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"搜尋失敗: {e}"
+
+    # ─── ABC Optional: Mirror writes ────────────────────────────────────────
+
+    def on_memory_write(
+        self,
+        action: str,
+        target: str,
+        content: str,
+        metadata: Optional[dict] = None,
+    ) -> None:
+        """Mirror built-in memory tool writes to recall."""
+        if not self._store:
+            self.initialize()
+        from recall.store import Memory
+        mem = Memory(
+            content=content[:500],
+            session_id=(metadata or {}).get("session_id", ""),
+            tag="semantic" if action in ("replace",) else "episodic",
+            timestamp=datetime.now(timezone.utc),
+        )
+        try:
+            self._store.add(mem)
+        except Exception as e:
+            logger.debug(f"on_memory_write failed: {e}")
 
 
 # ─── Hermes Plugin Entry Point ───────────────────────────────────────────────
