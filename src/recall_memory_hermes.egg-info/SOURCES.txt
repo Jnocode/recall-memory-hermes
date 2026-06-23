@@ -1,8 +1,0 @@
-README.md
-pyproject.toml
-src/recall_memory_hermes/__init__.py
-src/recall_memory_hermes.egg-info/PKG-INFO
-src/recall_memory_hermes.egg-info/SOURCES.txt
-src/recall_memory_hermes.egg-info/dependency_links.txt
-src/recall_memory_hermes.egg-info/requires.txt
-src/recall_memory_hermes.egg-info/top_level.txt
