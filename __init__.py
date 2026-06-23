@@ -48,11 +48,12 @@ class RecallMemoryProvider(MemoryProvider):
         except ImportError:
             return False
 
-    def initialize(self):
+    def initialize(self, session_id: str = "", **kwargs) -> None:
         """Connect to recall DB, warm up."""
         if self._store is not None:
             return
         from recall.store import SQLiteStore
+        self._session_id = session_id
         self._store = SQLiteStore(self.db_path)
         self._memory_count = self._store.count()
         logger.info(f"✅ recall initialized: {self.db_path} ({self._memory_count} memories)")
@@ -146,7 +147,7 @@ class RecallMemoryProvider(MemoryProvider):
             },
         ]
 
-    def handle_tool_call(self, tool_name: str, args: dict) -> str:
+    def handle_tool_call(self, tool_name: str, args: dict, **kwargs) -> str:
         """Dispatch tool calls to the appropriate method."""
         if tool_name == "memory_recall":
             return self._handle_recall_tool(args)
