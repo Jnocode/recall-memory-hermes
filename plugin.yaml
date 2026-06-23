@@ -6,7 +6,7 @@ license: Apache-2.0
 
 memory:
   provider: recall
-  entry_point: recall_memory_hermes:create_provider
+  entry_point: __init__:register
 
 config:
   db_path:
