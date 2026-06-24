@@ -5,11 +5,11 @@
 ## Installation
 
 ```bash
-# Install recall-memory first
-pip install recall-memory
+# Install the core library
+pip install recall-sqlite
 
 # Install the Hermes plugin
-hermes plugins install recall-memory-hermes
+hermes plugins install Jnocode/recall-memory-hermes
 
 # Configure as memory provider
 hermes memory setup

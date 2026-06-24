@@ -5,7 +5,8 @@ author: Jun
 license: Apache-2.0
 
 memory:
-  provider: recall
+  provider: recall-memory-hermes
+  provider_name: recall
   entry_point: :register
 
 config:
