@@ -27,8 +27,8 @@ pip install recall-sqlite
 # 2. 安裝這個 Hermes plugin
 hermes plugins install Jnocode/recall-memory-hermes
 
-# 3. 設定為預設記憶提供者
-hermes config set memory.provider recall-memory-hermes
+# 3. 啟用為記憶提供者
+hermes memory setup recall-memory-hermes
 
 # 4. 重新啟動 Hermes 讓設定生效
 hermes gateway restart
