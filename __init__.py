@@ -15,7 +15,8 @@ from agent.memory_provider import MemoryProvider
 
 logger = logging.getLogger(__name__)
 
-RECALL_DB_PATH = "D:/Workspace/03_Dev_Projects/recall/recall_p0.db"
+_HERMES_HOME = os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes"))
+RECALL_DB_PATH = os.path.join(_HERMES_HOME, "recall.db")
 
 
 class RecallMemoryProvider(MemoryProvider):
@@ -39,24 +40,36 @@ class RecallMemoryProvider(MemoryProvider):
     # ─── ABC Required: Core lifecycle ───────────────────────────────────────
 
     def is_available(self) -> bool:
-        """Check if recall DB exists and recall-memory is installed."""
-        if not os.path.exists(self.db_path):
-            return False
+        """Check if recall-sqlite is installed and DB accessible."""
         try:
             import recall  # noqa
-            return True
         except ImportError:
+            logger.warning("recall-sqlite not installed — run: pip install recall-sqlite")
             return False
+        # Auto-init DB if missing
+        if not os.path.exists(self.db_path):
+            from recall.store import SQLiteStore
+            try:
+                _store = SQLiteStore(self.db_path)
+                logger.info(f"Created new recall DB at {self.db_path}")
+                return True
+            except Exception as e:
+                logger.warning(f"Failed to create recall DB: {e}")
+                return False
+        return True
 
     def initialize(self, session_id: str = "", **kwargs) -> None:
         """Connect to recall DB, warm up."""
         if self._store is not None:
             return
         from recall.store import SQLiteStore
+        from recall.embed import is_loaded
         self._session_id = session_id
         self._store = SQLiteStore(self.db_path)
         self._memory_count = self._store.count()
-        logger.info(f"✅ recall initialized: {self.db_path} ({self._memory_count} memories)")
+        logger.info(f"recall initialized: {self.db_path} ({self._memory_count} memories)")
+        if not is_loaded():
+            logger.warning("LM Studio embedding not available — ANN search disabled. Start LM Studio with nomic-embed-text-v1.5 on port 1234")
 
     def shutdown(self):
         """Clean shutdown."""
@@ -110,11 +123,14 @@ class RecallMemoryProvider(MemoryProvider):
         if not user_content or not user_content.strip():
             return
         from recall.store import Memory
+        from recall.embed import embed
+        content = user_content[:500]
         mem = Memory(
-            content=user_content[:500],
+            content=content,
             session_id=session_id,
             tag="episodic",
             timestamp=datetime.now(timezone.utc),
+            embedding=embed(content),
         )
         try:
             self._store.add(mem)
@@ -184,11 +200,13 @@ class RecallMemoryProvider(MemoryProvider):
         if not self._store:
             self.initialize()
         from recall.store import Memory
+        from recall.embed import embed
         mem = Memory(
             content=content[:500],
             session_id=(metadata or {}).get("session_id", ""),
             tag="semantic" if action in ("replace",) else "episodic",
             timestamp=datetime.now(timezone.utc),
+            embedding=embed(content[:500]),
         )
         try:
             self._store.add(mem)

@@ -1,6 +1,6 @@
 name: recall-memory-hermes
-version: 0.1.0
-description: "Hermes Agent memory provider for recall-memory (SAG-based retrieval)"
+version: 0.2.0
+description: "Hermes Agent memory provider for recall-sqlite (SAG-based, tiered storage)"
 author: Jun
 license: Apache-2.0
 
