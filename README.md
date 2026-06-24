@@ -12,8 +12,10 @@ pip install recall-sqlite
 hermes plugins install Jnocode/recall-memory-hermes
 
 # Configure as memory provider
-hermes memory setup
-# → Select "recall" as provider
+hermes config set memory.provider recall-memory-hermes
+
+# Restart gateway to activate
+hermes gateway restart
 ```
 
 ## Configuration
@@ -21,11 +23,11 @@ hermes memory setup
 ```yaml
 # ~/.hermes/config.yaml
 memory:
-  provider: recall
-  recall:
-    db_path: "/path/to/recall_p0.db"      # default: auto-detect
-    embed_url: "http://127.0.0.1:1234"    # LM Studio embed endpoint
-    fallback_honcho: true                  # query Honcho if recall < 3 results
+  provider: recall-memory-hermes
+  recall-memory-hermes:
+    db_path: "~/.hermes/recall.db"           # default: auto-detect
+    embed_url: "http://127.0.0.1:1234"       # LM Studio embed endpoint
+    fallback_honcho: false                    # query Honcho if recall < 3 results
     fallback_honcho_url: "http://localhost:8082"
 ```
 
