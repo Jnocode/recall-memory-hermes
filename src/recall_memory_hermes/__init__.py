@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 
 from agent.memory_provider import MemoryProvider
-from .memory_policy import build_semantic_content, should_store_turn
+from .memory_policy import build_semantic_content, infer_project, project_matches, should_store_turn
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +101,9 @@ class RecallMemoryProvider(MemoryProvider):
             from recall.retrieve import retrieve_relevant
             # Long-term recall is curated. Raw episodic turns remain in the
             # Hermes session store and cannot crowd out durable decisions.
-            memories = retrieve_relevant(query, self._store, k=5, tag_filter="semantic")
+            project = infer_project(query)
+            candidates = retrieve_relevant(query, self._store, k=20, tag_filter="semantic")
+            memories = [m for m in candidates if project_matches(m.content, project)][:5]
             if not memories:
                 return ""
             lines = [f"🔍 找到相關記憶："]
