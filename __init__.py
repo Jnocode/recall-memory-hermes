@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 
 from agent.memory_provider import MemoryProvider
+from memory_policy import build_semantic_content, should_store_turn
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +99,9 @@ class RecallMemoryProvider(MemoryProvider):
             return ""
         try:
             from recall.retrieve import retrieve_relevant
-            memories = retrieve_relevant(query, self._store, k=5)
+            # Long-term recall is curated. Raw episodic turns remain in the
+            # Hermes session store and cannot crowd out durable decisions.
+            memories = retrieve_relevant(query, self._store, k=5, tag_filter="semantic")
             if not memories:
                 return ""
             lines = [f"🔍 找到相關記憶："]
@@ -122,20 +125,22 @@ class RecallMemoryProvider(MemoryProvider):
             self.initialize()
         if not user_content or not user_content.strip():
             return
+        if not should_store_turn(user_content):
+            return
         from recall.store import Memory
         from recall.embed import embed
-        content = user_content[:500]
+        content = build_semantic_content(user_content, assistant_content)
         mem = Memory(
             content=content,
             session_id=session_id,
-            tag="episodic",
+            tag="semantic",
             timestamp=datetime.now(timezone.utc),
             embedding=embed(content),
         )
         try:
             self._store.add(mem)
-        except Exception as e:
-            logger.debug(f"sync_turn store failed: {e}")
+        except Exception:
+            logger.warning("recall sync_turn store failed", exc_info=True)
 
     # ─── ABC Required: Tools ───────────────────────────────────────────────
 
@@ -202,16 +207,16 @@ class RecallMemoryProvider(MemoryProvider):
         from recall.store import Memory
         from recall.embed import embed
         mem = Memory(
-            content=content[:500],
+            content=content[:2500],
             session_id=(metadata or {}).get("session_id", ""),
-            tag="semantic" if action in ("replace",) else "episodic",
+            tag="semantic",
             timestamp=datetime.now(timezone.utc),
-            embedding=embed(content[:500]),
+            embedding=embed(content[:2500]),
         )
         try:
             self._store.add(mem)
-        except Exception as e:
-            logger.debug(f"on_memory_write failed: {e}")
+        except Exception:
+            logger.warning("recall on_memory_write failed", exc_info=True)
 
 
 # ─── Hermes Plugin Entry Point ───────────────────────────────────────────────

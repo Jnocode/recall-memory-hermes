@@ -104,3 +104,24 @@ cd recall-memory-hermes
 pip install -e .
 hermes plugins install .
 ```
+
+---
+
+## 記憶政策：避免流水帳污染
+
+Recall 是 **curated semantic memory**，不是對話 transcript warehouse：
+
+- 一般聊天只保留在 Hermes session history，不自動寫入 Recall。
+- 含有「記住、決定、規劃、架構、目標、偏好」等 durable intent 的 turn，才會把 user + assistant 結論寫成 `semantic` card。
+- 每張 card 會帶 `[PROJECT:...]` namespace。
+- prefetch 預設只召回 `semantic`，不讓 episodic 流水帳擠掉重大決策。
+- 舊 episodic 可先匯出再清理：
+
+```bash
+python scripts/compact_episodic.py \
+  --db ~/.hermes/recall.db \
+  --archive ./episodic-archive.jsonl \
+  --apply
+```
+
+原始對話仍保留在 Hermes session history；migration 只清理 Recall 主索引。
