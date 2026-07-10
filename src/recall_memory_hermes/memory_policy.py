@@ -49,6 +49,9 @@ def build_semantic_content(user_content: str, assistant_content: str) -> str:
 
 
 def extract_project(content: str) -> str:
-    """Read the project namespace embedded in a semantic card."""
     match = re.search(r"\[PROJECT:([^\]]+)\]", content or "")
     return match.group(1) if match else infer_project(content)
+
+
+def project_matches(content: str, project: str) -> bool:
+    return extract_project(content) in (project, "general")

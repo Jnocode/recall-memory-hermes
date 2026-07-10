@@ -2,6 +2,7 @@ from memory_policy import (
     build_semantic_content,
     extract_project,
     infer_project,
+    project_matches,
     should_store_turn,
 )
 
@@ -28,3 +29,6 @@ def test_semantic_card_contains_both_sides_and_project():
 def test_project_inference_is_stable():
     assert infer_project("代碼縫隙 YouTube") == "codegaps"
     assert extract_project("[PROJECT:podcast][TYPE:decision] text") == "podcast"
+    assert project_matches("[PROJECT:codegaps][TYPE:decision] text", "codegaps")
+    assert not project_matches("[PROJECT:podcast][TYPE:decision] text", "codegaps")
+    assert not project_matches("legacy untagged text", "codegaps")

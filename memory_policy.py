@@ -52,3 +52,11 @@ def extract_project(content: str) -> str:
     """Read the project namespace embedded in a semantic card."""
     match = re.search(r"\[PROJECT:([^\]]+)\]", content or "")
     return match.group(1) if match else infer_project(content)
+
+
+def project_matches(content: str, project: str) -> bool:
+    """Allow exact namespace matches; legacy untagged cards are global-only."""
+    match = re.search(r"\[PROJECT:([^\]]+)\]", content or "")
+    if not match:
+        return project == "general"
+    return match.group(1) in (project, "general")
