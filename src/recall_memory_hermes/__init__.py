@@ -111,8 +111,8 @@ class RecallMemoryProvider(MemoryProvider):
                 tag = f"[{m.tag}]" if m.tag else ""
                 lines.append(f"  {tag} {m.content[:120]}")
             return "\n".join(lines)
-        except Exception as e:
-            logger.debug(f"prefetch failed: {e}")
+        except Exception:
+            logger.warning("recall prefetch failed", exc_info=True)
             return ""
 
     def sync_turn(
@@ -184,7 +184,14 @@ class RecallMemoryProvider(MemoryProvider):
             self.initialize()
         try:
             from recall.retrieve import retrieve_relevant
-            memories = retrieve_relevant(query, self._store, k=k)
+            project = infer_project(query)
+            candidates = retrieve_relevant(
+                query,
+                self._store,
+                k=max(k * 4, k),
+                tag_filter="semantic",
+            )
+            memories = [m for m in candidates if project_matches(m.content, project)][:k]
             if not memories:
                 return "未找到相關記憶。"
             lines = [f"找到 {len(memories)} 條相關記憶："]

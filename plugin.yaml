@@ -16,8 +16,8 @@ config:
     description: "Path to recall DB (auto-detect if empty)"
   embed_url:
     type: string
-    default: "http://127.0.0.1:1234"
-    description: "LM Studio embedding endpoint"
+    default: "http://127.0.0.1:11434"
+    description: "Ollama embedding endpoint (nomic-embed-text)"
   fallback_honcho:
     type: bool
     default: false
