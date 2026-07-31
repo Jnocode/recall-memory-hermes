@@ -6,6 +6,7 @@ import pytest
 import yaml
 
 from scripts.check_release import check
+from scripts.smoke_installed_package import _is_repository_source
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,6 +37,22 @@ def test_generated_build_artifacts_are_not_tracked():
 
 def test_release_checker_accepts_v030_tag():
     assert check("v0.3.0") == []
+
+
+def test_wheel_smoke_distinguishes_repo_source_from_repo_local_venv(tmp_path):
+    repository = tmp_path / "checkout"
+    source = repository / "src" / "recall_memory_hermes" / "__init__.py"
+    installed = (
+        repository
+        / ".artifact-venv"
+        / "lib"
+        / "python3.11"
+        / "site-packages"
+        / "recall_memory_hermes"
+        / "__init__.py"
+    )
+    assert _is_repository_source(source, repository) is True
+    assert _is_repository_source(installed, repository) is False
 
 
 def test_release_checker_explicitly_rejects_retired_v021_tag():

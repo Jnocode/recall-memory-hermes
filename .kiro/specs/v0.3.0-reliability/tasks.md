@@ -80,7 +80,7 @@ Status legend: `[ ]` pending · `[>]` in progress · `[x]` complete · `[-]` int
 
 ## 7. Verification and release
 
-- [x] 7.1 Run full pytest suite with `PYTHONPATH/PYTHONHOME/VIRTUAL_ENV` cleared (69 passed).
+- [x] 7.1 Run full pytest suite with `PYTHONPATH/PYTHONHOME/VIRTUAL_ENV` cleared (70 passed).
 - [x] 7.2 Run source parity, AST/syntax, release consistency, build, twine, and clean-install gates.
 - [x] 7.3 Run temporary-DB CRUD and namespace golden-query integration harness.
 - [x] 7.4 Perform static secret/private-path scan on repository files and release artifacts (0 findings).
