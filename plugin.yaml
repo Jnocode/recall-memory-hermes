@@ -1,28 +1,43 @@
 name: recall-memory-hermes
-version: 0.2.0
-description: "Hermes Agent memory provider for recall-sqlite (SAG-based, tiered storage)"
-author: Jun
+version: "0.3.0"
+description: "Local Recall semantic memory provider with curated writes and project isolation"
+author: "Jun"
 license: Apache-2.0
+hermes_version: ">=0.19.0"
+kind: exclusive
 
 memory:
   provider: recall-memory-hermes
   provider_name: recall
   entry_point: :register
 
+pip_dependencies:
+  - recall-sqlite==0.2.0
+  - httpx>=0.27,<1
+
 config:
   db_path:
     type: string
     default: ""
-    description: "Path to recall DB (auto-detect if empty)"
+    description: "Recall SQLite DB path; blank uses the active Hermes profile"
   embed_url:
     type: string
     default: "http://127.0.0.1:11434"
-    description: "Ollama embedding endpoint (nomic-embed-text)"
-  fallback_honcho:
-    type: bool
-    default: false
-    description: "Fallback to Honcho if recall returns <3 results"
-  fallback_honcho_url:
+    description: "OpenAI-compatible embedding base URL"
+  embed_model:
     type: string
-    default: "http://localhost:8082"
-    description: "Honcho API base URL"
+    default: "nomic-embed-text"
+    description: "Embedding model identifier"
+  candidate_multiplier:
+    type: integer
+    default: 8
+    description: "Bounded retrieval candidate multiplier (2-20)"
+
+capabilities:
+  - vector_search
+  - keyword_search
+  - fts5_search
+  - tiered_storage
+  - session_aware
+  - project_namespaces
+  - builtin_memory_mirror

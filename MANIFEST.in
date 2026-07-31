@@ -1,0 +1,10 @@
+include LICENSE
+include README.md
+include CHANGELOG.md
+include plugin.yaml
+include __init__.py
+include memory_policy.py
+recursive-include scripts *.py
+recursive-include tests *.py
+recursive-include .kiro/specs *.md
+recursive-include assets *.png
