@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+      - name: Source and release metadata checks
+        run: |
+          python scripts/sync_sources.py --check
+          python scripts/check_release.py
+      - name: Tests
+        run: python -m pytest -q
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install build tooling
+        run: python -m pip install -e ".[dev]"
+      - name: Build and validate
+        run: |
+          python scripts/sync_sources.py --check
+          python scripts/check_release.py
+          python -m build
+          python -m twine check dist/*
+      - name: Smoke-test Git memory-provider loader contract
+        run: >-
+          python -m pytest -q tests/test_plugin_contract.py
+          -k "root_git_plugin_loads or memory_loader_collector_registers or manifest_routes_provider"
+      - name: Clean wheel library smoke
+        run: |
+          python -m venv .artifact-venv
+          .artifact-venv/bin/python -m pip install dist/*.whl
+          .artifact-venv/bin/python scripts/smoke_installed_package.py
