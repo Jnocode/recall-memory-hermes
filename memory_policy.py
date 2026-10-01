@@ -11,6 +11,9 @@ MAX_ASSISTANT_CHARS = 1600
 MAX_BUILTIN_CHARS = 2400
 
 _BLOCKED_WRAPPERS = (
+    "[continuing toward your standing goal]",
+    "[async delegation batch complete",
+    "[important: background process",
     "[delegation complete",
     "[background process",
     "[context compaction",

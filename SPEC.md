@@ -1,4 +1,6 @@
-# Recall Memory Hermes Plugin — Official Specification (SPEC.md)
+# Recall Memory Hermes Plugin — 設計／契約說明
+
+> 本文件不是每個 deployed runtime 的功能清單。候選適用範圍與已知限制以 [README.md](README.md) 為準：project heuristic 不是 ACL，add-before-delete 不是原子交易，embedding config lock 不涵蓋 HTTP request，沒有 OpenClaw／全客戶端 authority 的 production acceptance。
 
 > Version: 0.3.0 Ready
 > Implementation Reference: `memory_policy.py`, `__init__.py`

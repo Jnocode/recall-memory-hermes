@@ -1,5 +1,5 @@
 name: recall-memory-hermes
-version: "0.3.0"
+version: "0.3.1"
 description: "Local Recall semantic memory provider with curated writes and project isolation"
 author: "Jun"
 license: Apache-2.0
@@ -12,7 +12,7 @@ memory:
   entry_point: :register
 
 pip_dependencies:
-  - recall-sqlite==0.2.0
+  - recall-sqlite>=0.2.0,<0.3
   - httpx>=0.27,<1
 
 config:

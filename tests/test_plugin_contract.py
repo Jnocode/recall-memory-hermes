@@ -87,7 +87,7 @@ def test_dependency_bootstrap_uses_only_pinned_specs(monkeypatch):
 
     plugin._ensure_runtime_dependencies()
     assert calls == [tuple(plugin.PIP_DEPENDENCIES)]
-    assert calls[0] == ("recall-sqlite==0.2.0", "httpx>=0.27,<1")
+    assert calls[0] == ("recall-sqlite>=0.2.0,<0.3", "httpx>=0.27,<1")
 
 
 def test_dependency_bootstrap_does_not_install_when_recall_imports(monkeypatch):
@@ -112,7 +112,7 @@ def test_dependency_bootstrap_failure_is_actionable(monkeypatch):
     monkeypatch.setitem(sys.modules, "tools.lazy_deps", lazy)
     monkeypatch.setattr(plugin.importlib, "import_module", missing)
 
-    with pytest.raises(RuntimeError, match=r"recall-sqlite==0\.2\.0"):
+    with pytest.raises(RuntimeError, match=r"recall-sqlite>=0\.2\.0,<0\.3"):
         plugin._ensure_runtime_dependencies()
 
 

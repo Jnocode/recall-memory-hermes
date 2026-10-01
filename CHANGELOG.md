@@ -2,6 +2,14 @@
 
 All notable changes are documented here. Versions follow semantic versioning while the project is pre-1.0.
 
+## [0.3.1] - GitHub 交付候選（未發布）
+
+- 拒絕 standing-goal auto-resume、async delegation 與 important-background wrappers；新增先紅後綠回歸測試。
+- 依賴 range 支援 legacy core 0.2.0 與保存候選 0.2.1；精確恢復必須保存並安裝配對 wheel。
+- 保存 fetched 0.3.0 防護，不以舊 deployed plugin 的較弱鏡像／准入行為覆蓋。
+- 補 explicit DB、provider selection、新 session、資料保留與回切指引；揭露非原子 replace、heuristic project filter 與共用 embedding globals 限制。
+- CI 增加 preserve branch／手動驗證；無 tag、無 PyPI 發布。
+
 ## [0.3.0] - 2026-07-31
 
 ### Added

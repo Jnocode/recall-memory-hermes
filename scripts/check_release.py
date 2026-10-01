@@ -12,7 +12,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_DEPS = ["recall-sqlite==0.2.0", "httpx>=0.27,<1"]
+EXPECTED_DEPS = ["recall-sqlite>=0.2.0,<0.3", "httpx>=0.27,<1"]
 RETIRED_TAGS = {"v0.2.1"}
 
 
@@ -59,7 +59,7 @@ def check(tag: str = "") -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tag", default="", help="release tag, e.g. v0.3.0")
+    parser.add_argument("--tag", default="", help="release tag, e.g. v0.3.1")
     args = parser.parse_args()
     errors = check(args.tag)
     if errors:
