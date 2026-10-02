@@ -45,9 +45,9 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 PROVIDER_NAME = "recall-memory-hermes"
-PIP_DEPENDENCIES = ("recall-sqlite==0.2.0", "httpx>=0.27,<1")
+PIP_DEPENDENCIES = ("recall-sqlite>=0.2.0,<0.3", "httpx>=0.27,<1")
 DEFAULT_EMBED_URL = "http://127.0.0.1:11434"
 DEFAULT_EMBED_MODEL = "nomic-embed-text"
 DEFAULT_CANDIDATE_MULTIPLIER = 8
@@ -97,7 +97,7 @@ def _ensure_runtime_dependencies() -> None:
     except (AttributeError, ImportError, ModuleNotFoundError) as exc:
         raise RuntimeError(
             "Recall dependency is missing and Hermes' safe lazy installer is unavailable. "
-            "Run in the Hermes environment: pip install recall-sqlite==0.2.0 'httpx>=0.27,<1'"
+            "Run in the Hermes environment: pip install 'recall-sqlite>=0.2.0,<0.3' 'httpx>=0.27,<1'"
         ) from exc
 
     result = install_specs(PIP_DEPENDENCIES)
@@ -107,8 +107,8 @@ def _ensure_runtime_dependencies() -> None:
             getattr(result, "reason", "") or getattr(result, "stderr", "")
         )
         raise RuntimeError(
-            "Unable to install recall-sqlite==0.2.0 through Hermes lazy dependencies: "
-            f"{reason}. Manual recovery: pip install recall-sqlite==0.2.0 'httpx>=0.27,<1'"
+            "Unable to install recall-sqlite>=0.2.0,<0.3 through Hermes lazy dependencies: "
+            f"{reason}. Manual recovery: pip install 'recall-sqlite>=0.2.0,<0.3' 'httpx>=0.27,<1'"
         )
 
     importlib.invalidate_caches()
@@ -116,7 +116,7 @@ def _ensure_runtime_dependencies() -> None:
         importlib.import_module("recall")
     except ImportError as exc:
         raise RuntimeError(
-            "Hermes reported a successful install, but recall-sqlite==0.2.0 is still not importable. "
+            "Hermes reported a successful install, but recall-sqlite>=0.2.0,<0.3 is still not importable. "
             "Check HERMES_LAZY_INSTALL_TARGET and restart Hermes."
         ) from exc
 

@@ -12,12 +12,12 @@ from scripts.smoke_installed_package import _is_repository_source
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_release_metadata_is_v030_and_manifest_declares_dependencies():
+def test_release_metadata_is_v031_and_manifest_declares_dependencies():
     pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     manifest = yaml.safe_load((ROOT / "plugin.yaml").read_text(encoding="utf-8"))
-    assert pyproject["project"]["version"] == "0.3.0"
-    assert manifest["version"] == "0.3.0"
-    assert manifest["pip_dependencies"] == ["recall-sqlite==0.2.0", "httpx>=0.27,<1"]
+    assert pyproject["project"]["version"] == "0.3.1"
+    assert manifest["version"] == "0.3.1"
+    assert manifest["pip_dependencies"] == ["recall-sqlite>=0.2.0,<0.3", "httpx>=0.27,<1"]
 
 
 def test_generated_build_artifacts_are_not_tracked():
@@ -35,8 +35,8 @@ def test_generated_build_artifacts_are_not_tracked():
     assert forbidden == []
 
 
-def test_release_checker_accepts_v030_tag():
-    assert check("v0.3.0") == []
+def test_release_checker_accepts_v031_tag():
+    assert check("v0.3.1") == []
 
 
 def test_wheel_smoke_distinguishes_repo_source_from_repo_local_venv(tmp_path):

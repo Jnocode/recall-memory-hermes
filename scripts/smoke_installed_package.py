@@ -33,7 +33,7 @@ def main() -> None:
     repository = Path(__file__).resolve().parents[1]
     if _is_repository_source(module_path, repository):
         raise RuntimeError(f"expected installed wheel, imported repository source: {module_path}")
-    if recall_memory_hermes.__version__ != "0.3.0":
+    if recall_memory_hermes.__version__ != "0.3.1":
         raise RuntimeError(f"unexpected wheel version: {recall_memory_hermes.__version__}")
     print(f"WHEEL_LIBRARY_SMOKE_OK version={recall_memory_hermes.__version__}")
 
